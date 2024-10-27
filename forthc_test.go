@@ -2,7 +2,6 @@ package forthc
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"os"
 	"testing"
@@ -10,22 +9,10 @@ import (
 	"github.com/alecthomas/participle/v2"
 )
 
-func TestParser(t *testing.T) {
-	input := "5 10 +"
-	var errBuf bytes.Buffer
-	prog, err := Parser.ParseString("test.f", input, participle.Trace(&errBuf))
-	if err != nil {
-		fmt.Printf("\n%s", &errBuf)
-		t.Fatal(err)
-	}
-	data, _ := json.MarshalIndent(prog, "", "  ")
-	fmt.Printf("%s\n", string(data))
-}
-
 func TestGenerator(t *testing.T) {
-	input := `: add3 + + ;
-: add3_mul2 add3 2 * ;
-1 2 3 add3_mul2`
+	input := `: less100? 100 < ;
+: add100 dup less100? if 100 + then ;
+100 add100`
 	var errBuf bytes.Buffer
 	prog, err := Parser.ParseString("test.f", input, participle.Trace(&errBuf))
 	if err != nil {

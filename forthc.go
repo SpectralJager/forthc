@@ -15,7 +15,9 @@ var Lexer = lexer.MustStateful(lexer.Rules{
 	"Root": []lexer.Rule{
 		{Name: "whitespace", Pattern: `[ \r\t\n]+`},
 
-		{Name: "Symbol", Pattern: `[a-zA-Z_]+[a-zA-Z_0-9]*`},
+		{Name: "If", Pattern: `if`},
+		{Name: "Then", Pattern: `then`},
+		{Name: "Symbol", Pattern: `[a-zA-Z_]+[a-zA-Z_0-9]*[\?<>(<>)=(<=)(>=)]?`},
 		{Name: "Integer", Pattern: `(-)?[0-9]+`},
 
 		{Name: "+", Pattern: `\+`},
@@ -46,6 +48,7 @@ var Parser = participle.MustBuild[Program](
 		IntegerNode{},
 		SymbolNode{},
 		BinOpNode{},
+		IfThenNode{},
 	),
 )
 
@@ -77,6 +80,10 @@ type SymbolDefNode struct {
 	Body   []DefinitionExpression `parser:"@@+ ';'"`
 }
 
+type IfThenNode struct {
+	Body []DefinitionExpression `parser:"'if' @@+ 'then'"`
+}
+
 /*
 === Code generator
 */
@@ -94,7 +101,14 @@ type Codegen struct {
 
 func NewGenerator() *Codegen {
 	return &Codegen{
-		Environment: map[string]string{},
+		Environment: map[string]string{
+			"dup": `addi sp, sp, -0x4
+lw t0, 0(sp)
+addi sp, sp, 0x4
+sw t0, 0(sp)
+addi sp, sp, 0x4
+`,
+		},
 	}
 }
 
@@ -125,10 +139,9 @@ func (cd *Codegen) Generate(node any, out io.Writer) error {
 		fmt.Fprintf(out, "addi sp, sp, 0x4\n")
 	case BinOpNode:
 		lbl := strings.ReplaceAll(uuid.NewString(), "-", "_")
-		fmt.Fprintf(out, "li t0, 0x4\n")
-		fmt.Fprintf(out, "sub sp, sp, t0\n")
+		fmt.Fprintf(out, "addi sp, sp, -0x4\n")
 		fmt.Fprintf(out, "lw t2, 0(sp)\n")
-		fmt.Fprintf(out, "sub sp, sp, t0\n")
+		fmt.Fprintf(out, "addi sp, sp, -0x4\n")
 		fmt.Fprintf(out, "lw t1, 0(sp)\n")
 		switch node.Operation {
 		case "+":
@@ -189,6 +202,20 @@ func (cd *Codegen) Generate(node any, out io.Writer) error {
 			}
 		}
 		cd.Environment[node.Symbol] = body.String()
+	case IfThenNode:
+		var body bytes.Buffer
+		for _, exp := range node.Body {
+			err := cd.Generate(exp, &body)
+			if err != nil {
+				return err
+			}
+		}
+		lbl := strings.ReplaceAll(uuid.NewString(), "-", "_")
+		fmt.Fprintf(out, "addi sp, sp, -0x4\n")
+		fmt.Fprintf(out, "lw t0, 0(sp)\n")
+		fmt.Fprintf(out, "beq t0, zero, .%s\n", lbl)
+		fmt.Fprint(out, body.String())
+		fmt.Fprintf(out, ".%s:\n", lbl)
 	default:
 		return fmt.Errorf("receive unexpected node: %T", node)
 	}
