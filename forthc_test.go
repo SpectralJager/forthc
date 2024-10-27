@@ -23,7 +23,7 @@ func TestParser(t *testing.T) {
 }
 
 func TestGenerator(t *testing.T) {
-	input := "-5 10 +"
+	input := "10 10 <>"
 	var errBuf bytes.Buffer
 	prog, err := Parser.ParseString("test.f", input, participle.Trace(&errBuf))
 	if err != nil {

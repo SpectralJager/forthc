@@ -3,9 +3,11 @@ package forthc
 import (
 	"fmt"
 	"io"
+	"strings"
 
 	"github.com/alecthomas/participle/v2"
 	"github.com/alecthomas/participle/v2/lexer"
+	"github.com/google/uuid"
 )
 
 var Lexer = lexer.MustStateful(lexer.Rules{
@@ -19,6 +21,12 @@ var Lexer = lexer.MustStateful(lexer.Rules{
 		{Name: "-", Pattern: `-`},
 		{Name: "*", Pattern: `\*`},
 		{Name: "/", Pattern: `\/`},
+		{Name: "<>", Pattern: `<>`},
+		{Name: "<", Pattern: `<`},
+		{Name: ">", Pattern: `>`},
+		{Name: "<=", Pattern: `<=`},
+		{Name: ">=", Pattern: `>=`},
+		{Name: "=", Pattern: `=`},
 	},
 })
 
@@ -45,17 +53,18 @@ type IntegerNode struct {
 }
 
 type BinOpNode struct {
-	Operation string `parser:"@('+'|'-'|'*'|'/')"`
+	Operation string `parser:"@('+'|'-'|'*'|'/'|'<'|'>'|'<='|'>='|'='|'<>')"`
 }
 
 /*
 === Code generator
 */
-const Preamble = `init:
+const Preamble = `j .init
+.init:
 li sp, 0x10010000
-j main
+j .main
 
-main:
+.main:
 `
 
 type Codegen struct{}
@@ -77,6 +86,7 @@ func (cd *Codegen) GenerateFromProgram(prog *Program, out io.Writer) error {
 			fmt.Fprintf(out, "sw t0, 0(sp)\n")
 			fmt.Fprintf(out, "addi sp, sp, 0x4\n")
 		case BinOpNode:
+			lbl := strings.ReplaceAll(uuid.NewString(), "-", "_")
 			fmt.Fprintf(out, "li t0, 0x4\n")
 			fmt.Fprintf(out, "sub sp, sp, t0\n")
 			fmt.Fprintf(out, "lw t2, 0(sp)\n")
@@ -91,6 +101,36 @@ func (cd *Codegen) GenerateFromProgram(prog *Program, out io.Writer) error {
 				fmt.Fprintf(out, "mul t0, t1, t2\n")
 			case "/":
 				fmt.Fprintf(out, "div t0, t1, t2\n")
+			case "<":
+				fmt.Fprintf(out, "slt t0, t1, t2\n")
+				fmt.Fprintf(out, "neg t0, t0\n")
+			case ">":
+				fmt.Fprintf(out, "slt t0, t2, t1\n")
+				fmt.Fprintf(out, "neg t0, t0\n")
+			case "<=":
+				fmt.Fprintf(out, "li t0, 1\n")
+				fmt.Fprintf(out, "beq t1, t2, .%s\n", lbl)
+				fmt.Fprintf(out, "slt t0, t1, t2\n")
+				fmt.Fprintf(out, ".%s:\n", lbl)
+				fmt.Fprintf(out, "neg t0, t0\n")
+			case ">=":
+				fmt.Fprintf(out, "li t0, 1\n")
+				fmt.Fprintf(out, "beq t1, t2, .%s\n", lbl)
+				fmt.Fprintf(out, "slt t0, t2, t1\n")
+				fmt.Fprintf(out, ".%s:\n", lbl)
+				fmt.Fprintf(out, "neg t0, t0\n")
+			case "=":
+				fmt.Fprintf(out, "li t0, 1\n")
+				fmt.Fprintf(out, "beq t1, t2, .%s\n", lbl)
+				fmt.Fprintf(out, "li t0, 0\n")
+				fmt.Fprintf(out, ".%s:\n", lbl)
+				fmt.Fprintf(out, "neg t0, t0\n")
+			case "<>":
+				fmt.Fprintf(out, "li t0, 1\n")
+				fmt.Fprintf(out, "bne t1, t2, .%s\n", lbl)
+				fmt.Fprintf(out, "li t0, 0\n")
+				fmt.Fprintf(out, ".%s:\n", lbl)
+				fmt.Fprintf(out, "neg t0, t0\n")
 			default:
 				return fmt.Errorf("unexpected binary operation: %s", node.Operation)
 			}
