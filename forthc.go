@@ -108,6 +108,16 @@ addi sp, sp, 0x4
 sw t0, 0(sp)
 addi sp, sp, 0x4
 `,
+			"swap": `addi sp, sp, -0x4
+lw t0, 0(sp)
+addi sp, sp, -0x4
+lw t1, 0(sp)
+sw t0, 0(sp)
+addi sp, sp, 0x4
+sw t1, 0(sp)
+addi sp, sp, 0x4
+`,
+			"drop": `addi sp, sp, -0x4`,
 		},
 	}
 }
