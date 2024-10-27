@@ -23,14 +23,16 @@ func TestParser(t *testing.T) {
 }
 
 func TestGenerator(t *testing.T) {
-	input := "10 10 <>"
+	input := `: add3 + + ;
+: add3_mul2 add3 2 * ;
+1 2 3 add3_mul2`
 	var errBuf bytes.Buffer
 	prog, err := Parser.ParseString("test.f", input, participle.Trace(&errBuf))
 	if err != nil {
 		fmt.Printf("\n%s", errBuf.String())
 		t.Fatal(err)
 	}
-	cd := Codegen{}
+	cd := NewGenerator()
 	f, err := os.Create("test.asm")
 	if err != nil {
 		t.Fatal(err)
