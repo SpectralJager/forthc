@@ -17,6 +17,7 @@ var Lexer = lexer.MustStateful(lexer.Rules{
 
 		{Name: "If", Pattern: `if`},
 		{Name: "Then", Pattern: `then`},
+		{Name: "Else", Pattern: `else`},
 		{Name: "Symbol", Pattern: `[a-zA-Z_]+[a-zA-Z_0-9]*[\?<>(<>)=(<=)(>=)]?`},
 		{Name: "Integer", Pattern: `(-)?[0-9]+`},
 
@@ -48,6 +49,7 @@ var Parser = participle.MustBuild[Program](
 		IntegerNode{},
 		SymbolNode{},
 		BinOpNode{},
+		IfThenElseNode{},
 		IfThenNode{},
 	),
 )
@@ -82,6 +84,11 @@ type SymbolDefNode struct {
 
 type IfThenNode struct {
 	Body []DefinitionExpression `parser:"'if' @@+ 'then'"`
+}
+
+type IfThenElseNode struct {
+	ThenBody []DefinitionExpression `parser:"'if' @@+ "`
+	ElseBody []DefinitionExpression `parser:"'else' @@+ 'then'"`
 }
 
 /*
@@ -225,6 +232,29 @@ func (cd *Codegen) Generate(node any, out io.Writer) error {
 		fmt.Fprintf(out, "lw t0, 0(sp)\n")
 		fmt.Fprintf(out, "beq t0, zero, .%s\n", lbl)
 		fmt.Fprint(out, body.String())
+		fmt.Fprintf(out, ".%s:\n", lbl)
+	case IfThenElseNode:
+		var thenBody, elseBody bytes.Buffer
+		for _, exp := range node.ThenBody {
+			err := cd.Generate(exp, &thenBody)
+			if err != nil {
+				return err
+			}
+		}
+		for _, exp := range node.ElseBody {
+			err := cd.Generate(exp, &elseBody)
+			if err != nil {
+				return err
+			}
+		}
+		lbl := strings.ReplaceAll(uuid.NewString(), "-", "_")
+		fmt.Fprintf(out, "addi sp, sp, -0x4\n")
+		fmt.Fprintf(out, "lw t0, 0(sp)\n")
+		fmt.Fprintf(out, "beq t0, zero, .%s_else\n", lbl)
+		fmt.Fprint(out, thenBody.String())
+		fmt.Fprintf(out, "j .%s\n", lbl)
+		fmt.Fprintf(out, ".%s_else:\n", lbl)
+		fmt.Fprint(out, elseBody.String())
 		fmt.Fprintf(out, ".%s:\n", lbl)
 	default:
 		return fmt.Errorf("receive unexpected node: %T", node)

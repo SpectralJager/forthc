@@ -10,9 +10,9 @@ import (
 )
 
 func TestGenerator(t *testing.T) {
-	input := `: less100? 100 < ;
-: add100 dup less100? if 100 + then ;
-100 add100`
+	input := `: is100? 100 = ;
+: add100 dup is100? if 100 + else 10 + then ;
+10 add100`
 	var errBuf bytes.Buffer
 	prog, err := Parser.ParseString("test.f", input, participle.Trace(&errBuf))
 	if err != nil {
