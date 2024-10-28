@@ -14,8 +14,29 @@ addi sp, sp, -0x4
 lw t6, 0(sp)
 addi sp, sp, -0x4
 lw t5, 0(sp)
-.2f82db7f_c3fc_4a77_9dad_dd6bf32dc44b:
+.91c2ad3f_b367_4cb6_a130_74ee38e9c4b9:
+li t0, 0xa
+sw t0, 0(sp)
+addi sp, sp, 0x4
 sw t6, 0(sp)
 addi sp, sp, 0x4
+addi sp, sp, -0x4
+lw t4, 0(sp)
+addi sp, sp, -0x4
+lw t3, 0(sp)
+.91fc4db8_cb04_4e1b_bd59_084de77a2c39:
+sw t6, 0(sp)
+addi sp, sp, 0x4
+sw t4, 0(sp)
+addi sp, sp, 0x4
+addi sp, sp, -0x4
+lw t2, 0(sp)
+addi sp, sp, -0x4
+lw t1, 0(sp)
+mul t0, t1, t2
+sw t0, 0(sp)
+addi sp, sp, 0x4
+addi t4, t4, 0x1
+bne t3, t4, .91fc4db8_cb04_4e1b_bd59_084de77a2c39
 addi t6, t6, 0x1
-bne t5, t6, .2f82db7f_c3fc_4a77_9dad_dd6bf32dc44b
+bne t5, t6, .91c2ad3f_b367_4cb6_a130_74ee38e9c4b9

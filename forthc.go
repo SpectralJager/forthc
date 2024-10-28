@@ -286,7 +286,15 @@ func (cd *Codegen) Generate(node any, out io.Writer) error {
 		fmt.Fprintf(out, ".%s:\n", lbl)
 	case DoLoopNode:
 		var body bytes.Buffer
-		cd.Environment["i"] = "sw t6, 0(sp)\naddi sp, sp, 0x4\n"
+		ind, lmt := 6, 5
+		if _, ok := cd.Environment["i"]; ok {
+			ind, lmt = 4, 3
+			cd.Environment["j"] = "sw t4, 0(sp)\naddi sp, sp, 0x4\n"
+			defer delete(cd.Environment, "j")
+		} else {
+			cd.Environment["i"] = "sw t6, 0(sp)\naddi sp, sp, 0x4\n"
+			defer delete(cd.Environment, "i")
+		}
 		for _, exp := range node.Body {
 			err := cd.Generate(exp, &body)
 			if err != nil {
@@ -295,13 +303,13 @@ func (cd *Codegen) Generate(node any, out io.Writer) error {
 		}
 		lbl := strings.ReplaceAll(uuid.NewString(), "-", "_")
 		fmt.Fprintf(out, "addi sp, sp, -0x4\n")
-		fmt.Fprintf(out, "lw t6, 0(sp)\n")
+		fmt.Fprintf(out, "lw t%d, 0(sp)\n", ind)
 		fmt.Fprintf(out, "addi sp, sp, -0x4\n")
-		fmt.Fprintf(out, "lw t5, 0(sp)\n")
+		fmt.Fprintf(out, "lw t%d, 0(sp)\n", lmt)
 		fmt.Fprintf(out, ".%s:\n", lbl)
 		fmt.Fprint(out, body.String())
-		fmt.Fprintf(out, "addi t6, t6, 0x1\n")
-		fmt.Fprintf(out, "bne t5, t6, .%s\n", lbl)
+		fmt.Fprintf(out, "addi t%d, t%d, 0x1\n", ind, ind)
+		fmt.Fprintf(out, "bne t%d, t%d, .%s\n", lmt, ind, lbl)
 	default:
 		return fmt.Errorf("receive unexpected node: %T", node)
 	}

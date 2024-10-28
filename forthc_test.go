@@ -10,7 +10,7 @@ import (
 )
 
 func TestGenerator(t *testing.T) {
-	input := `: loop_test 10 0 do i loop ;
+	input := `: loop_test 10 0 do 10 i do i j * loop loop ;
 loop_test`
 	var errBuf bytes.Buffer
 	prog, err := Parser.ParseString("test.f", input, participle.Trace(&errBuf))
