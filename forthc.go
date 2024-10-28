@@ -18,6 +18,9 @@ var Lexer = lexer.MustStateful(lexer.Rules{
 		{Name: "If", Pattern: `if`},
 		{Name: "Then", Pattern: `then`},
 		{Name: "Else", Pattern: `else`},
+		{Name: "And", Pattern: `and`},
+		{Name: "Or", Pattern: `or`},
+		{Name: "Invert", Pattern: `invert`},
 		{Name: "Symbol", Pattern: `[a-zA-Z_]+[a-zA-Z_0-9]*[\?<>(<>)=(<=)(>=)]?`},
 		{Name: "Integer", Pattern: `(-)?[0-9]+`},
 
@@ -43,14 +46,15 @@ var Parser = participle.MustBuild[Program](
 		IntegerNode{},
 		SymbolNode{},
 		BinOpNode{},
+		UnOpNode{},
 		SymbolDefNode{},
 	),
 	participle.Union[DefinitionExpression](
 		IntegerNode{},
 		SymbolNode{},
 		BinOpNode{},
+		UnOpNode{},
 		IfThenElseNode{},
-		IfThenNode{},
 	),
 )
 
@@ -72,7 +76,11 @@ type SymbolNode struct {
 }
 
 type BinOpNode struct {
-	Operation string `parser:"@('+'|'-'|'*'|'/'|'<'|'>'|'<='|'>='|'='|'<>')"`
+	Operation string `parser:"@('+'|'-'|'*'|'/'|'<'|'>'|'<='|'>='|'='|'<>'|'and'|'or')"`
+}
+
+type UnOpNode struct {
+	Operations string `parser:"@('invert')"`
 }
 
 type DefinitionExpression interface{}
@@ -82,13 +90,9 @@ type SymbolDefNode struct {
 	Body   []DefinitionExpression `parser:"@@+ ';'"`
 }
 
-type IfThenNode struct {
-	Body []DefinitionExpression `parser:"'if' @@+ 'then'"`
-}
-
 type IfThenElseNode struct {
 	ThenBody []DefinitionExpression `parser:"'if' @@+ "`
-	ElseBody []DefinitionExpression `parser:"'else' @@+ 'then'"`
+	ElseBody []DefinitionExpression `parser:"('else' @@+)? 'then'"`
 }
 
 /*
@@ -219,20 +223,6 @@ func (cd *Codegen) Generate(node any, out io.Writer) error {
 			}
 		}
 		cd.Environment[node.Symbol] = body.String()
-	case IfThenNode:
-		var body bytes.Buffer
-		for _, exp := range node.Body {
-			err := cd.Generate(exp, &body)
-			if err != nil {
-				return err
-			}
-		}
-		lbl := strings.ReplaceAll(uuid.NewString(), "-", "_")
-		fmt.Fprintf(out, "addi sp, sp, -0x4\n")
-		fmt.Fprintf(out, "lw t0, 0(sp)\n")
-		fmt.Fprintf(out, "beq t0, zero, .%s\n", lbl)
-		fmt.Fprint(out, body.String())
-		fmt.Fprintf(out, ".%s:\n", lbl)
 	case IfThenElseNode:
 		var thenBody, elseBody bytes.Buffer
 		for _, exp := range node.ThenBody {
