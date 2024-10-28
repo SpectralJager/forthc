@@ -10,10 +10,8 @@ import (
 )
 
 func TestGenerator(t *testing.T) {
-	input := `\3 4 < 20 30 < and
-\3 4 < 20 30 or
-\3 4 < invert
--1 -1 and`
+	input := `: loop_test 10 0 do i loop ;
+loop_test`
 	var errBuf bytes.Buffer
 	prog, err := Parser.ParseString("test.f", input, participle.Trace(&errBuf))
 	if err != nil {

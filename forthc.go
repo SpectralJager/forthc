@@ -16,13 +16,15 @@ var Lexer = lexer.MustStateful(lexer.Rules{
 		{Name: "whitespace", Pattern: `[ \r\t\n]+`},
 		{Name: "comment", Pattern: `(\\[^\n]*)|(\(.*\))`},
 
-		{Name: "If", Pattern: `if`},
-		{Name: "Then", Pattern: `then`},
-		{Name: "Else", Pattern: `else`},
-		{Name: "And", Pattern: `and`},
-		{Name: "Or", Pattern: `or`},
-		{Name: "Invert", Pattern: `invert`},
-		{Name: "Symbol", Pattern: `[a-zA-Z_]+[a-zA-Z_0-9]*[\?<>(<>)=(<=)(>=)]?`},
+		{Name: "If", Pattern: `\bif\b`},
+		{Name: "Then", Pattern: `\bthen\b`},
+		{Name: "Else", Pattern: `\belse\b`},
+		{Name: "And", Pattern: `\band\b`},
+		{Name: "Or", Pattern: `\bor\b`},
+		{Name: "Invert", Pattern: `\binvert\b`},
+		{Name: "Do", Pattern: `\bdo\b`},
+		{Name: "Loop", Pattern: `\bloop\b`},
+		{Name: "Symbol", Pattern: `\b[a-zA-Z_]+[a-zA-Z_0-9]*[\?<>(<>)=(<=)(>=)]?\b`},
 		{Name: "Integer", Pattern: `(-)?[0-9]+`},
 
 		{Name: "+", Pattern: `\+`},
@@ -56,6 +58,7 @@ var Parser = participle.MustBuild[Program](
 		BinOpNode{},
 		UnOpNode{},
 		IfThenElseNode{},
+		DoLoopNode{},
 	),
 )
 
@@ -94,6 +97,10 @@ type SymbolDefNode struct {
 type IfThenElseNode struct {
 	ThenBody []DefinitionExpression `parser:"'if' @@+ "`
 	ElseBody []DefinitionExpression `parser:"('else' @@+)? 'then'"`
+}
+
+type DoLoopNode struct {
+	Body []DefinitionExpression `parser:"'do' @@+ 'loop'"`
 }
 
 /*
@@ -277,6 +284,24 @@ func (cd *Codegen) Generate(node any, out io.Writer) error {
 		fmt.Fprintf(out, ".%s_else:\n", lbl)
 		fmt.Fprint(out, elseBody.String())
 		fmt.Fprintf(out, ".%s:\n", lbl)
+	case DoLoopNode:
+		var body bytes.Buffer
+		cd.Environment["i"] = "sw t6, 0(sp)\naddi sp, sp, 0x4\n"
+		for _, exp := range node.Body {
+			err := cd.Generate(exp, &body)
+			if err != nil {
+				return err
+			}
+		}
+		lbl := strings.ReplaceAll(uuid.NewString(), "-", "_")
+		fmt.Fprintf(out, "addi sp, sp, -0x4\n")
+		fmt.Fprintf(out, "lw t6, 0(sp)\n")
+		fmt.Fprintf(out, "addi sp, sp, -0x4\n")
+		fmt.Fprintf(out, "lw t5, 0(sp)\n")
+		fmt.Fprintf(out, ".%s:\n", lbl)
+		fmt.Fprint(out, body.String())
+		fmt.Fprintf(out, "addi t6, t6, 0x1\n")
+		fmt.Fprintf(out, "bne t5, t6, .%s\n", lbl)
 	default:
 		return fmt.Errorf("receive unexpected node: %T", node)
 	}
