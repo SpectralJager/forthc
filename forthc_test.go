@@ -10,8 +10,12 @@ import (
 )
 
 func TestGenerator(t *testing.T) {
-	input := `: loop_test 10 0 do 10 i do i j * loop loop ;
-loop_test`
+	input := `variable balance
+	variable pena
+	123 balance !
+	10 pena !
+	balance @
+	pena @`
 	var errBuf bytes.Buffer
 	prog, err := Parser.ParseString("test.f", input, participle.Trace(&errBuf))
 	if err != nil {

@@ -24,6 +24,7 @@ var Lexer = lexer.MustStateful(lexer.Rules{
 		{Name: "Invert", Pattern: `\binvert\b`},
 		{Name: "Do", Pattern: `\bdo\b`},
 		{Name: "Loop", Pattern: `\bloop\b`},
+		{Name: "Variable", Pattern: `\bvariable\b`},
 		{Name: "Symbol", Pattern: `\b[a-zA-Z_]+[a-zA-Z_0-9]*[\?<>(<>)=(<=)(>=)]?\b`},
 		{Name: "Integer", Pattern: `(-)?[0-9]+`},
 
@@ -39,6 +40,8 @@ var Lexer = lexer.MustStateful(lexer.Rules{
 		{Name: "=", Pattern: `=`},
 		{Name: ":", Pattern: `:`},
 		{Name: ";", Pattern: `;`},
+		{Name: "!", Pattern: `!`},
+		{Name: "@", Pattern: `@`},
 	},
 })
 
@@ -46,13 +49,18 @@ var Parser = participle.MustBuild[Program](
 	participle.Lexer(Lexer),
 	participle.UseLookahead(1),
 	participle.Union[Expression](
+		AssignNode{},
+		ReceiveNode{},
 		IntegerNode{},
 		SymbolNode{},
 		BinOpNode{},
 		UnOpNode{},
 		SymbolDefNode{},
+		VariableDefNode{},
 	),
 	participle.Union[DefinitionExpression](
+		AssignNode{},
+		ReceiveNode{},
 		IntegerNode{},
 		SymbolNode{},
 		BinOpNode{},
@@ -87,6 +95,18 @@ type UnOpNode struct {
 	Operation string `parser:"@('invert')"`
 }
 
+type VariableDefNode struct {
+	Identifier string `parser:"'variable' @Symbol"`
+}
+
+type ReceiveNode struct {
+	Identifier string `parser:"@Symbol '@'"`
+}
+
+type AssignNode struct {
+	Identifier string `parser:"@Symbol '!'"`
+}
+
 type DefinitionExpression interface{}
 
 type SymbolDefNode struct {
@@ -109,6 +129,7 @@ type DoLoopNode struct {
 const Preamble = `j .init
 .init:
 li sp, 0x10010000
+li s0, 0x10040000
 j .main
 
 .main:
@@ -116,6 +137,7 @@ j .main
 
 type Codegen struct {
 	Environment map[string]string
+	HeapOffset  int
 }
 
 func NewGenerator() *Codegen {
@@ -310,6 +332,31 @@ func (cd *Codegen) Generate(node any, out io.Writer) error {
 		fmt.Fprint(out, body.String())
 		fmt.Fprintf(out, "addi t%d, t%d, 0x1\n", ind, ind)
 		fmt.Fprintf(out, "bne t%d, t%d, .%s\n", lmt, ind, lbl)
+	case VariableDefNode:
+		cd.Environment[node.Identifier] = fmt.Sprintf("addi t0, s0, 0x%x\nsw t0, 0(sp)\naddi sp, sp, 0x4\n", cd.HeapOffset)
+		cd.HeapOffset += 4
+	case ReceiveNode:
+		body, ok := cd.Environment[node.Identifier]
+		if !ok {
+			return fmt.Errorf("undefined variable: %s", node.Identifier)
+		}
+		fmt.Fprintf(out, body)
+		fmt.Fprintf(out, "addi sp, sp, -0x4\n")
+		fmt.Fprintf(out, "lw t0, 0(sp)\n")
+		fmt.Fprintf(out, "lw t0, 0(t0)\n")
+		fmt.Fprintf(out, "sw t0, 0(sp)\n")
+		fmt.Fprintf(out, "addi sp, sp, 0x4\n")
+	case AssignNode:
+		body, ok := cd.Environment[node.Identifier]
+		if !ok {
+			return fmt.Errorf("undefined variable: %s", node.Identifier)
+		}
+		fmt.Fprintf(out, body)
+		fmt.Fprintf(out, "addi sp, sp, -0x4\n")
+		fmt.Fprintf(out, "lw t0, 0(sp)\n")
+		fmt.Fprintf(out, "addi sp, sp, -0x4\n")
+		fmt.Fprintf(out, "lw t1, 0(sp)\n")
+		fmt.Fprintf(out, "sw t1, 0(t0)\n")
 	default:
 		return fmt.Errorf("receive unexpected node: %T", node)
 	}
