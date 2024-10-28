@@ -25,6 +25,8 @@ var Lexer = lexer.MustStateful(lexer.Rules{
 		{Name: "Do", Pattern: `\bdo\b`},
 		{Name: "Loop", Pattern: `\bloop\b`},
 		{Name: "Variable", Pattern: `\bvariable\b`},
+		{Name: "Begin", Pattern: `\bbegin\b`},
+		{Name: "Until", Pattern: `\buntil\b`},
 		{Name: "Symbol", Pattern: `\b[a-zA-Z_]+[a-zA-Z_0-9]*[\?<>(<>)=(<=)(>=)]?\b`},
 		{Name: "Integer", Pattern: `(-)?[0-9]+`},
 
@@ -67,6 +69,7 @@ var Parser = participle.MustBuild[Program](
 		UnOpNode{},
 		IfThenElseNode{},
 		DoLoopNode{},
+		BeginUntilNode{},
 	),
 )
 
@@ -121,6 +124,10 @@ type IfThenElseNode struct {
 
 type DoLoopNode struct {
 	Body []DefinitionExpression `parser:"'do' @@+ 'loop'"`
+}
+
+type BeginUntilNode struct {
+	Body []DefinitionExpression `parser:"'begin' @@+ 'until'"`
 }
 
 /*
@@ -332,6 +339,21 @@ func (cd *Codegen) Generate(node any, out io.Writer) error {
 		fmt.Fprint(out, body.String())
 		fmt.Fprintf(out, "addi t%d, t%d, 0x1\n", ind, ind)
 		fmt.Fprintf(out, "bne t%d, t%d, .%s\n", lmt, ind, lbl)
+	case BeginUntilNode:
+		var body bytes.Buffer
+		for _, exp := range node.Body {
+			err := cd.Generate(exp, &body)
+			if err != nil {
+				return err
+			}
+		}
+		lbl := strings.ReplaceAll(uuid.NewString(), "-", "_")
+		fmt.Fprintf(out, ".%s:\n", lbl)
+		fmt.Fprint(out, body.String())
+		fmt.Fprintf(out, "addi sp, sp, -0x4\n")
+		fmt.Fprintf(out, "lw t0, 0(sp)\n")
+		fmt.Fprintf(out, "beqz t0, .%s\n", lbl)
+
 	case VariableDefNode:
 		cd.Environment[node.Identifier] = fmt.Sprintf("addi t0, s0, 0x%x\nsw t0, 0(sp)\naddi sp, sp, 0x4\n", cd.HeapOffset)
 		cd.HeapOffset += 4

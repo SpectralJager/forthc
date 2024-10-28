@@ -10,12 +10,15 @@ import (
 )
 
 func TestGenerator(t *testing.T) {
-	input := `variable balance
-	variable pena
-	123 balance !
-	10 pena !
-	balance @
-	pena @`
+	input := `variable counter
+: count_to_10
+	begin
+		counter @ 1 + counter !
+		counter @ 10 =		
+	until
+;
+0 counter !
+count_to_10`
 	var errBuf bytes.Buffer
 	prog, err := Parser.ParseString("test.f", input, participle.Trace(&errBuf))
 	if err != nil {
