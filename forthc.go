@@ -27,6 +27,7 @@ var Lexer = lexer.MustStateful(lexer.Rules{
 		{Name: "Variable", Pattern: `\bvariable\b`},
 		{Name: "Begin", Pattern: `\bbegin\b`},
 		{Name: "Until", Pattern: `\buntil\b`},
+		{Name: "Cmove", Pattern: `\bcmove\b`},
 		{Name: "Symbol", Pattern: `\b[a-zA-Z_]+[a-zA-Z_0-9]*[\?<>(<>)=(<=)(>=)]?\b`},
 		{Name: "Integer", Pattern: `(-)?[0-9]+`},
 
@@ -59,6 +60,7 @@ var Parser = participle.MustBuild[Program](
 		UnOpNode{},
 		SymbolDefNode{},
 		VariableDefNode{},
+		CmoveNode{},
 	),
 	participle.Union[DefinitionExpression](
 		AssignNode{},
@@ -70,6 +72,7 @@ var Parser = participle.MustBuild[Program](
 		IfThenElseNode{},
 		DoLoopNode{},
 		BeginUntilNode{},
+		CmoveNode{},
 	),
 )
 
@@ -108,6 +111,10 @@ type ReceiveNode struct {
 
 type AssignNode struct {
 	Identifier string `parser:"@Symbol '!'"`
+}
+
+type CmoveNode struct {
+	Keyword bool `parser:"'cmove'"`
 }
 
 type DefinitionExpression interface{}
@@ -379,6 +386,21 @@ func (cd *Codegen) Generate(node any, out io.Writer) error {
 		fmt.Fprintf(out, "addi sp, sp, -0x4\n")
 		fmt.Fprintf(out, "lw t1, 0(sp)\n")
 		fmt.Fprintf(out, "sw t1, 0(t0)\n")
+	case CmoveNode:
+		lbl := strings.ReplaceAll(uuid.NewString(), "-", "_")
+		fmt.Fprintf(out, "addi sp, sp, -0x4\n")
+		fmt.Fprintf(out, "lw t0, 0(sp)\n")
+		fmt.Fprintf(out, "addi sp, sp, -0x4\n")
+		fmt.Fprintf(out, "lw t1, 0(sp)\n")
+		fmt.Fprintf(out, "addi sp, sp, -0x4\n")
+		fmt.Fprintf(out, "lw t2, 0(sp)\n")
+		fmt.Fprintf(out, ".%s:\n", lbl)
+		fmt.Fprintf(out, "lw t3, 0(t2)\n")
+		fmt.Fprintf(out, "sw t3, 0(t1)\n")
+		fmt.Fprintf(out, "addi t0, t0, -0x1\n")
+		fmt.Fprintf(out, "addi t1, t1, 0x4\n")
+		fmt.Fprintf(out, "addi t2, t2, 0x4\n")
+		fmt.Fprintf(out, "bnez t0, .%s\n", lbl)
 	default:
 		return fmt.Errorf("receive unexpected node: %T", node)
 	}

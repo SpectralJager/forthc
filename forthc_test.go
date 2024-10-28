@@ -10,15 +10,8 @@ import (
 )
 
 func TestGenerator(t *testing.T) {
-	input := `variable counter
-: count_to_10
-	begin
-		counter @ 1 + counter !
-		counter @ 10 =		
-	until
-;
-0 counter !
-count_to_10`
+	input := `10 20 30
+268500992 268501024 3 cmove`
 	var errBuf bytes.Buffer
 	prog, err := Parser.ParseString("test.f", input, participle.Trace(&errBuf))
 	if err != nil {
