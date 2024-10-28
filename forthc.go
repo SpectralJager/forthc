@@ -14,6 +14,7 @@ import (
 var Lexer = lexer.MustStateful(lexer.Rules{
 	"Root": []lexer.Rule{
 		{Name: "whitespace", Pattern: `[ \r\t\n]+`},
+		{Name: "comment", Pattern: `(\\[^\n]*)|(\(.*\))`},
 
 		{Name: "If", Pattern: `if`},
 		{Name: "Then", Pattern: `then`},
@@ -80,7 +81,7 @@ type BinOpNode struct {
 }
 
 type UnOpNode struct {
-	Operations string `parser:"@('invert')"`
+	Operation string `parser:"@('invert')"`
 }
 
 type DefinitionExpression interface{}
@@ -203,8 +204,38 @@ func (cd *Codegen) Generate(node any, out io.Writer) error {
 			fmt.Fprintf(out, "li t0, 0\n")
 			fmt.Fprintf(out, ".%s:\n", lbl)
 			fmt.Fprintf(out, "neg t0, t0\n")
+		case "and":
+			fmt.Fprintf(out, "li t0, 0\n")
+			fmt.Fprintf(out, "beqz t1, .%s\n", lbl)
+			fmt.Fprintf(out, "beqz t2, .%s\n", lbl)
+			fmt.Fprintf(out, "li t0, 1\n")
+			fmt.Fprintf(out, ".%s:\n", lbl)
+			fmt.Fprintf(out, "neg t0, t0\n")
+		case "or":
+			fmt.Fprintf(out, "li t0, 1\n")
+			fmt.Fprintf(out, "bnez t1, .%s\n", lbl)
+			fmt.Fprintf(out, "bnez t2, .%s\n", lbl)
+			fmt.Fprintf(out, "li t0, 0\n")
+			fmt.Fprintf(out, ".%s:\n", lbl)
+			fmt.Fprintf(out, "neg t0, t0\n")
 		default:
 			return fmt.Errorf("unexpected binary operation: %s", node.Operation)
+		}
+		fmt.Fprintf(out, "sw t0, 0(sp)\n")
+		fmt.Fprintf(out, "addi sp, sp, 0x4\n")
+	case UnOpNode:
+		lbl := strings.ReplaceAll(uuid.NewString(), "-", "_")
+		fmt.Fprintf(out, "addi sp, sp, -0x4\n")
+		fmt.Fprintf(out, "lw t1, 0(sp)\n")
+		switch node.Operation {
+		case "invert":
+			fmt.Fprintf(out, "li t0, 1\n")
+			fmt.Fprintf(out, "beqz t1, .%s\n", lbl)
+			fmt.Fprintf(out, "li t0, 0\n")
+			fmt.Fprintf(out, ".%s:\n", lbl)
+			fmt.Fprintf(out, "neg t0, t0\n")
+		default:
+			return fmt.Errorf("unexpected unary operation: %s", node.Operation)
 		}
 		fmt.Fprintf(out, "sw t0, 0(sp)\n")
 		fmt.Fprintf(out, "addi sp, sp, 0x4\n")
