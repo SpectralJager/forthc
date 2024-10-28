@@ -1,0 +1,298 @@
+":" Program
+  ":" group{n+}
+    ":" capture{}
+      ":" Expression
+        ":" disjunction{}
+          ":" AssignNode
+            ":" sequence{}
+              ":" capture{}
+                ":" reference{Symbol}
+          ":" ReceiveNode
+            ":" sequence{}
+              ":" capture{}
+                ":" reference{Symbol}
+          ":" IntegerNode
+            ":" capture{}
+              ":" reference{Integer}
+          ":" SymbolNode
+            ":" capture{}
+              ":" reference{Symbol}
+          ":" BinOpNode
+            ":" capture{}
+              ":" group{n}
+                ":" disjunction{}
+                  ":" literal{"+", "EOF"}
+                  ":" literal{"-", "EOF"}
+                  ":" literal{"*", "EOF"}
+                  ":" literal{"/", "EOF"}
+                  ":" literal{"<", "EOF"}
+                  ":" literal{">", "EOF"}
+                  ":" literal{"<=", "EOF"}
+                  ":" literal{">=", "EOF"}
+                  ":" literal{"=", "EOF"}
+                  ":" literal{"<>", "EOF"}
+                  ":" literal{"and", "EOF"}
+                  ":" literal{"or", "EOF"}
+          ":" UnOpNode
+            ":" capture{}
+              ":" group{n}
+                ":" literal{"invert", "EOF"}
+          ":" SymbolDefNode
+            ":" sequence{}
+              ":" literal{":", "EOF"}
+              "loop_test" capture{}
+                "loop_test" reference{Symbol}
+              "10" group{n+}
+                "10" capture{}
+                  "10" DefinitionExpression
+                    "10" disjunction{}
+                      "10" AssignNode
+                        "10" sequence{}
+                          "10" capture{}
+                            "10" reference{Symbol}
+                      "10" ReceiveNode
+                        "10" sequence{}
+                          "10" capture{}
+                            "10" reference{Symbol}
+                      "10" IntegerNode
+                        "10" capture{}
+                          "10" reference{Integer}
+                "0" capture{}
+                  "0" DefinitionExpression
+                    "0" disjunction{}
+                      "0" AssignNode
+                        "0" sequence{}
+                          "0" capture{}
+                            "0" reference{Symbol}
+                      "0" ReceiveNode
+                        "0" sequence{}
+                          "0" capture{}
+                            "0" reference{Symbol}
+                      "0" IntegerNode
+                        "0" capture{}
+                          "0" reference{Integer}
+                "do" capture{}
+                  "do" DefinitionExpression
+                    "do" disjunction{}
+                      "do" AssignNode
+                        "do" sequence{}
+                          "do" capture{}
+                            "do" reference{Symbol}
+                      "do" ReceiveNode
+                        "do" sequence{}
+                          "do" capture{}
+                            "do" reference{Symbol}
+                      "do" IntegerNode
+                        "do" capture{}
+                          "do" reference{Integer}
+                      "do" SymbolNode
+                        "do" capture{}
+                          "do" reference{Symbol}
+                      "do" BinOpNode
+                        "do" capture{}
+                          "do" group{n}
+                            "do" disjunction{}
+                              "do" literal{"+", "EOF"}
+                              "do" literal{"-", "EOF"}
+                              "do" literal{"*", "EOF"}
+                              "do" literal{"/", "EOF"}
+                              "do" literal{"<", "EOF"}
+                              "do" literal{">", "EOF"}
+                              "do" literal{"<=", "EOF"}
+                              "do" literal{">=", "EOF"}
+                              "do" literal{"=", "EOF"}
+                              "do" literal{"<>", "EOF"}
+                              "do" literal{"and", "EOF"}
+                              "do" literal{"or", "EOF"}
+                      "do" UnOpNode
+                        "do" capture{}
+                          "do" group{n}
+                            "do" literal{"invert", "EOF"}
+                      "do" IfThenElseNode
+                        "do" sequence{}
+                          "do" literal{"if", "EOF"}
+                      "do" DoLoopNode
+                        "do" sequence{}
+                          "do" literal{"do", "EOF"}
+                          "i" group{n+}
+                            "i" capture{}
+                              "i" DefinitionExpression
+                                "i" disjunction{}
+                                  "i" AssignNode
+                                    "i" sequence{}
+                                      "i" capture{}
+                                        "i" reference{Symbol}
+                                      "loop" literal{"!", "EOF"}
+                                  "i" ReceiveNode
+                                    "i" sequence{}
+                                      "i" capture{}
+                                        "i" reference{Symbol}
+                                      "loop" literal{"@", "EOF"}
+                                  "i" IntegerNode
+                                    "i" capture{}
+                                      "i" reference{Integer}
+                                  "i" SymbolNode
+                                    "i" capture{}
+                                      "i" reference{Symbol}
+                            "loop" capture{}
+                              "loop" DefinitionExpression
+                                "loop" disjunction{}
+                                  "loop" AssignNode
+                                    "loop" sequence{}
+                                      "loop" capture{}
+                                        "loop" reference{Symbol}
+                                  "loop" ReceiveNode
+                                    "loop" sequence{}
+                                      "loop" capture{}
+                                        "loop" reference{Symbol}
+                                  "loop" IntegerNode
+                                    "loop" capture{}
+                                      "loop" reference{Integer}
+                                  "loop" SymbolNode
+                                    "loop" capture{}
+                                      "loop" reference{Symbol}
+                                  "loop" BinOpNode
+                                    "loop" capture{}
+                                      "loop" group{n}
+                                        "loop" disjunction{}
+                                          "loop" literal{"+", "EOF"}
+                                          "loop" literal{"-", "EOF"}
+                                          "loop" literal{"*", "EOF"}
+                                          "loop" literal{"/", "EOF"}
+                                          "loop" literal{"<", "EOF"}
+                                          "loop" literal{">", "EOF"}
+                                          "loop" literal{"<=", "EOF"}
+                                          "loop" literal{">=", "EOF"}
+                                          "loop" literal{"=", "EOF"}
+                                          "loop" literal{"<>", "EOF"}
+                                          "loop" literal{"and", "EOF"}
+                                          "loop" literal{"or", "EOF"}
+                                  "loop" UnOpNode
+                                    "loop" capture{}
+                                      "loop" group{n}
+                                        "loop" literal{"invert", "EOF"}
+                                  "loop" IfThenElseNode
+                                    "loop" sequence{}
+                                      "loop" literal{"if", "EOF"}
+                                  "loop" DoLoopNode
+                                    "loop" sequence{}
+                                      "loop" literal{"do", "EOF"}
+                                  "loop" BeginUntilNode
+                                    "loop" sequence{}
+                                      "loop" literal{"begin", "EOF"}
+                                  "loop" CmoveNode
+                                    "loop" literal{"cmove", "EOF"}
+                          "loop" literal{"loop", "EOF"}
+                ";" capture{}
+                  ";" DefinitionExpression
+                    ";" disjunction{}
+                      ";" AssignNode
+                        ";" sequence{}
+                          ";" capture{}
+                            ";" reference{Symbol}
+                      ";" ReceiveNode
+                        ";" sequence{}
+                          ";" capture{}
+                            ";" reference{Symbol}
+                      ";" IntegerNode
+                        ";" capture{}
+                          ";" reference{Integer}
+                      ";" SymbolNode
+                        ";" capture{}
+                          ";" reference{Symbol}
+                      ";" BinOpNode
+                        ";" capture{}
+                          ";" group{n}
+                            ";" disjunction{}
+                              ";" literal{"+", "EOF"}
+                              ";" literal{"-", "EOF"}
+                              ";" literal{"*", "EOF"}
+                              ";" literal{"/", "EOF"}
+                              ";" literal{"<", "EOF"}
+                              ";" literal{">", "EOF"}
+                              ";" literal{"<=", "EOF"}
+                              ";" literal{">=", "EOF"}
+                              ";" literal{"=", "EOF"}
+                              ";" literal{"<>", "EOF"}
+                              ";" literal{"and", "EOF"}
+                              ";" literal{"or", "EOF"}
+                      ";" UnOpNode
+                        ";" capture{}
+                          ";" group{n}
+                            ";" literal{"invert", "EOF"}
+                      ";" IfThenElseNode
+                        ";" sequence{}
+                          ";" literal{"if", "EOF"}
+                      ";" DoLoopNode
+                        ";" sequence{}
+                          ";" literal{"do", "EOF"}
+                      ";" BeginUntilNode
+                        ";" sequence{}
+                          ";" literal{"begin", "EOF"}
+                      ";" CmoveNode
+                        ";" literal{"cmove", "EOF"}
+              ";" literal{";", "EOF"}
+    "loop_test" capture{}
+      "loop_test" Expression
+        "loop_test" disjunction{}
+          "loop_test" AssignNode
+            "loop_test" sequence{}
+              "loop_test" capture{}
+                "loop_test" reference{Symbol}
+              "<EOF>" literal{"!", "EOF"}
+          "loop_test" ReceiveNode
+            "loop_test" sequence{}
+              "loop_test" capture{}
+                "loop_test" reference{Symbol}
+              "<EOF>" literal{"@", "EOF"}
+          "loop_test" IntegerNode
+            "loop_test" capture{}
+              "loop_test" reference{Integer}
+          "loop_test" SymbolNode
+            "loop_test" capture{}
+              "loop_test" reference{Symbol}
+    "<EOF>" capture{}
+      "<EOF>" Expression
+        "<EOF>" disjunction{}
+          "<EOF>" AssignNode
+            "<EOF>" sequence{}
+              "<EOF>" capture{}
+                "<EOF>" reference{Symbol}
+          "<EOF>" ReceiveNode
+            "<EOF>" sequence{}
+              "<EOF>" capture{}
+                "<EOF>" reference{Symbol}
+          "<EOF>" IntegerNode
+            "<EOF>" capture{}
+              "<EOF>" reference{Integer}
+          "<EOF>" SymbolNode
+            "<EOF>" capture{}
+              "<EOF>" reference{Symbol}
+          "<EOF>" BinOpNode
+            "<EOF>" capture{}
+              "<EOF>" group{n}
+                "<EOF>" disjunction{}
+                  "<EOF>" literal{"+", "EOF"}
+                  "<EOF>" literal{"-", "EOF"}
+                  "<EOF>" literal{"*", "EOF"}
+                  "<EOF>" literal{"/", "EOF"}
+                  "<EOF>" literal{"<", "EOF"}
+                  "<EOF>" literal{">", "EOF"}
+                  "<EOF>" literal{"<=", "EOF"}
+                  "<EOF>" literal{">=", "EOF"}
+                  "<EOF>" literal{"=", "EOF"}
+                  "<EOF>" literal{"<>", "EOF"}
+                  "<EOF>" literal{"and", "EOF"}
+                  "<EOF>" literal{"or", "EOF"}
+          "<EOF>" UnOpNode
+            "<EOF>" capture{}
+              "<EOF>" group{n}
+                "<EOF>" literal{"invert", "EOF"}
+          "<EOF>" SymbolDefNode
+            "<EOF>" sequence{}
+              "<EOF>" literal{":", "EOF"}
+          "<EOF>" VariableDefNode
+            "<EOF>" sequence{}
+              "<EOF>" literal{"variable", "EOF"}
+          "<EOF>" CmoveNode
+            "<EOF>" literal{"cmove", "EOF"}
